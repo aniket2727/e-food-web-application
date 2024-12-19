@@ -6,6 +6,7 @@ const errorHandler = require('./middleware/errorHandler');
 const rateLimit = require('express-rate-limit');
 const winston = require('winston');
 const cors = require('cors');
+const { connectToRedis, closeRedisConnection } = require('./controller/loginController');
 
 // Load environment variables
 dotenv.config();
@@ -20,6 +21,7 @@ connectDB();
 
 // Apply middleware
 app.use(express.json()); // Make sure this is before the routes
+
 
 // Create a logger instance
 const logger = winston.createLogger({
@@ -39,6 +41,13 @@ const limiter = rateLimit({
 
 // Routes
 app.use('/api/users', limiter, userRoutes); // Apply rate-limiting to the user routes''
+
+// Gracefully close Redis on server shutdown
+process.on('SIGINT', () => {
+  closeRedisConnection();
+  process.exit(0);
+});
+
 
 app.use(errorHandler); // Custom error handler (if you want to have more specific error handling)
 
